@@ -68,7 +68,7 @@ def get_user_tweets(twitter_handle):
 
 # Write an invocation to the function for the "umich" user timeline and save the result in a variable called umich_tweets:
 umich_tweets= get_user_tweets("umich")
-print(len(umich_tweets))
+#print(json.dumps(umich_tweets))
 
 
 
@@ -103,10 +103,44 @@ print(len(umich_tweets))
 ## HINT #2: You may want to go back to a structure we used in class this week to ensure that you reference the user correctly in each Tweet record.
 ## HINT #3: The users mentioned in each tweet are included in the tweet dictionary -- you don't need to do any manipulation of the Tweet text to find out which they are! Do some nested data investigation on a dictionary that represents 1 tweet to see it!
 
+conn= sqlite3.connect('project3_tweets.db')
+cur= conn.cursor()
+
+#Tweets table
+cur.execute('DROP TABLE IF EXISTS Tweets')
+table_spec = 'CREATE TABLE IF NOT EXISTS '
+
+table_spec += 'Tweets (tweet_id TEXT PRIMARY KEY, '
+table_spec += 'text TEXT, user_id TEXT, time_posted TIMESTAMP, retweets INTEGER)'
+cur.execute(table_spec)
 
 
 
+#Users Table 
+cur.execute('DROP TABLE IF EXISTS Users')
+table_spec2= "CREATE TABLE IF NOT EXISTS "
 
+table_spec2 += "Users (user_id TEXT, screen_name TEXT, num_favs INTEGER, description TEXT)"
+cur.execute(table_spec2)
+
+
+statement= "INSERT INTO Tweets VALUES (?,?, ?, ?, ?)"
+tweet_particulars= []
+for tweet in umich_tweets: 
+	tweet_particulars.append((tweet["id_str"], tweet["text"], tweet["user"]["id_str"], tweet["created_at"], tweet["retweet_count"]))
+for tup in tweet_particulars:
+	cur.execute(statement, tup)
+
+
+
+statement2= "INSERT INTO Users VALUES (?, ?, ?, ?)"
+user_particulars= []
+for tweet in umich_tweets:
+	user_particulars.append((tweet["user"]["id_str"], tweet["user"]["screen_name"], tweet["user"]["favourites_count"], tweet["user"]["description"]))
+for t in user_particulars:
+	cur.execute(statement2, t)
+
+conn.commit()
 
 
 
