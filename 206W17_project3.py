@@ -120,7 +120,7 @@ cur.execute(table_spec)
 cur.execute('DROP TABLE IF EXISTS Users')
 table_spec2= "CREATE TABLE IF NOT EXISTS "
 
-table_spec2 += "Users (user_id TEXT, screen_name TEXT, num_favs INTEGER, description TEXT)"
+table_spec2 += "Users (user_id TEXT PRIMARY KEY, screen_name TEXT, num_favs INTEGER, description TEXT)"
 cur.execute(table_spec2)
 
 
@@ -132,12 +132,21 @@ for tup in tweet_particulars:
 	cur.execute(statement, tup)
 
 
-
-statement2= "INSERT INTO Users VALUES (?, ?, ?, ?)"
+statement2= "INSERT OR IGNORE INTO Users VALUES (?, ?, ?, ?)"
 user_particulars= []
 for tweet in umich_tweets:
 	user_particulars.append((tweet["user"]["id_str"], tweet["user"]["screen_name"], tweet["user"]["favourites_count"], tweet["user"]["description"]))
+
 for t in user_particulars:
+	cur.execute(statement2, t)
+
+user_mention_particulars= []
+for tweet in umich_tweets:
+	for lst in tweet["entities"]["user_mentions"]:
+		user_info= api.get_user(user_id= lst["id_str"])
+		user_mention_particulars.append((user_info["id_str"], user_info["screen_name"], user_info["favourites_count"], user_info["description"]))
+			
+for t in user_mention_particulars:
 	cur.execute(statement2, t)
 
 conn.commit()
@@ -152,19 +161,35 @@ conn.commit()
 # All of the following sub-tasks require writing SQL statements and executing them using Python.
 
 # Make a query to select all of the records in the Users database. Save the list of tuples in a variable called users_info.
+query1= "SELECT * FROM Users"
+cur.execute(query1)
+users_info= cur.fetchall()
 
 # Make a query to select all of the user screen names from the database. Save a resulting list of strings (NOT tuples, the strings inside them!) in the variable screen_names. HINT: a list comprehension will make this easier to complete!
+query2= "SELECT screen_name FROM Users"
+cur.execute(query2)
+screen_names= [str(x)[2:-3] for x in cur.fetchall()]
 
 
 # Make a query to select all of the tweets (full rows of tweet information) that have been retweeted more than 25 times. Save the result (a list of tuples, or an empty list) in a variable called more_than_25_rts.
-
+query3= "SELECT * FROM Tweets WHERE retweets> 25"
+cur.execute(query3)
+more_than_25_rts= cur.fetchall()
 
 
 # Make a query to select all the descriptions (descriptions only) of the users who have favorited more than 25 tweets. Access all those strings, and save them in a variable called descriptions_fav_users, which should ultimately be a list of strings.
+query4= "SELECT description FROM Users WHERE num_favs > 25"
+cur.execute(query4)
+descriptions_fav_users= [str(x)[2:-3] for x in cur.fetchall()]
+
+
 
 
 
 # Make a query using an INNER JOIN to get a list of tuples with 2 elements in each tuple: the user screenname and the text of the tweet -- for each tweet that has been retweeted more than 50 times. Save the resulting list of tuples in a variable called joined_result.
+query5= "SELECT screen_name FROM Users INNER JOIN Tweets ON Users.user_id= Tweets.user_id WHERE Tweets.retweets> 50"
+cur.execute(query5)
+joined_result= cur.fetchall()
 
 
 
@@ -172,7 +197,7 @@ conn.commit()
 ## Task 4 - Manipulating data with comprehensions & libraries
 
 ## Use a set comprehension to get a set of all words (combinations of characters separated by whitespace) among the descriptions in the descriptions_fav_users list. Save the resulting set in a variable called description_words.
-
+#for item in descriptions_fav_users
 
 
 ## Use a Counter in the collections library to find the most common character among all of the descriptions in the descriptions_fav_users list. Save that most common character in a variable called most_common_char. Break any tie alphabetically (but using a Counter will do a lot of work for you...).
@@ -186,7 +211,7 @@ conn.commit()
 
 
 ### IMPORTANT: MAKE SURE TO CLOSE YOUR DATABASE CONNECTION AT THE END OF THE FILE HERE SO YOU DO NOT LOCK YOUR DATABASE (it's fixable, but it's a pain). ###
-
+conn.close()
 
 ###### TESTS APPEAR BELOW THIS LINE ######
 ###### Note that the tests are necessary to pass, but not sufficient -- must make sure you've followed the instructions accurately! ######
