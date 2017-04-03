@@ -17,7 +17,7 @@ import sqlite3
 ## Your name: Taylor Lundeen
 ## The names of anyone you worked with on this project:
 
-#####
+##### 
 
 ##### TWEEPY SETUP CODE:
 # Authentication information should be in a twitter_info file...
@@ -172,17 +172,16 @@ screen_names= [str(x)[2:-3] for x in cur.fetchall()]
 
 
 # Make a query to select all of the tweets (full rows of tweet information) that have been retweeted more than 25 times. Save the result (a list of tuples, or an empty list) in a variable called more_than_25_rts.
-query3= "SELECT * FROM Tweets WHERE retweets> 25"
+query3= "SELECT * FROM Tweets WHERE retweets> 5"
 cur.execute(query3)
 more_than_25_rts= cur.fetchall()
 
 
 # Make a query to select all the descriptions (descriptions only) of the users who have favorited more than 25 tweets. Access all those strings, and save them in a variable called descriptions_fav_users, which should ultimately be a list of strings.
-query4= "SELECT description FROM Users WHERE num_favs > 25"
+query4= "SELECT description FROM Users WHERE num_favs > 5"
 cur.execute(query4)
 descriptions_fav_users= [str(x)[2:-3] for x in cur.fetchall()]
-
-
+#print(descriptions_fav_users[0])
 
 
 
@@ -197,16 +196,57 @@ joined_result= cur.fetchall()
 ## Task 4 - Manipulating data with comprehensions & libraries
 
 ## Use a set comprehension to get a set of all words (combinations of characters separated by whitespace) among the descriptions in the descriptions_fav_users list. Save the resulting set in a variable called description_words.
-#for item in descriptions_fav_users
+word_lists= []
+for lst in descriptions_fav_users:
+	word_lists.append(lst.split())
+
+words= []
+for lst in word_lists:
+	for word in lst:
+		words.append(word)
+
+description_words= {word for word in words}
+
+
 
 
 ## Use a Counter in the collections library to find the most common character among all of the descriptions in the descriptions_fav_users list. Save that most common character in a variable called most_common_char. Break any tie alphabetically (but using a Counter will do a lot of work for you...).
 
+letters= []
+for lst in word_lists:
+	for word in lst:
+		for letter in word:
+			letters.append(letter)
+c= collections.Counter(letters)
 
-
+most_common_char= c.most_common(1)[0][0]
+	
 ## Putting it all together...
 # Write code to create a dictionary whose keys are Twitter screen names and whose associated values are lists of tweet texts that that user posted. You may need to make additional queries to your database! To do this, you can use, and must use at least one of: the DefaultDict container in the collections library, a dictionary comprehension, list comprehension(s). Y
 # You should save the final dictionary in a variable called twitter_info_diction.
+
+q= "SELECT Users.screen_name, Tweets.text FROM Tweets INNER JOIN Users ON Tweets.user_id = Users.user_id"
+cur.execute(q)
+list_of_tups= cur.fetchall()
+
+first_dict= {}
+
+for (x,y) in list_of_tups:
+	if x not in first_dict:
+		first_dict[x]= []
+		first_dict[x].append(y)
+	else:
+		first_dict[x].append(y)
+		
+
+twitter_info_diction= {each: first_dict[each] for each in first_dict}
+
+
+
+
+
+
+
 
 
 
